@@ -1,5 +1,6 @@
 # this script is used to train the semantic segmentation model
 # using the dataset provided in the repository
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -15,8 +16,9 @@ from tqdm import tqdm
 import argparse
 
 if __name__ == "__main__":
+    weights_name = "unet.pth"
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_save_path", default="model_weights/unet.pth", type=str)
+    parser.add_argument("--model_save_path", default="model_weights", type=str)
     parser.add_argument("--data_path", default="D:\Job\Other\pytorch\pytorch_pipelines\semantic_segmentation\dataset", type=str)
     parser.add_argument("--epochs", default=2, type=int)
     parser.add_argument("--batch_size", default=32, type=int)
@@ -30,7 +32,7 @@ if __name__ == "__main__":
 
     # load dataset
     data_path = args.data_path
-    model_save_path = args.model_save_path
+    model_save_path = os.path.join(args.model_save_path, weights_name)
     dataset = ObjectDataset(data_path)
     generator = torch.Generator().manual_seed(42)
     train_data, val_data = random_split(dataset, [0.8, 0.2], generator=generator)
