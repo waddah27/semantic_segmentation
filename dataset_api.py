@@ -12,7 +12,6 @@ class ObjectDataset(Dataset):
         self.mask_dir = os.path.join(root, 'masks')
         self.transform = transforms.Compose([
             transforms.Resize((512, 512)),
-            transforms.Flip(0.5),
             transforms.RandomRotation(30),
             transforms.RandomHorizontalFlip(0.5),
             transforms.ToTensor()
