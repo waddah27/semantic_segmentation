@@ -7,7 +7,7 @@ from unet import UNet
 from PIL import Image
 import matplotlib.pyplot as plt
 class ModelWrapper:
-    def __init__(self, weights_path, img, device="cpu"):
+    def __init__(self, weights_path, device="cpu"):
         self.transforms = transforms.Compose([
             transforms.Resize((512, 512)),
             transforms.ToTensor()
