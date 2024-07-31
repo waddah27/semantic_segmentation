@@ -50,4 +50,4 @@ if __name__ == "__main__":
     img_dir = args.data_path
     model_save_path = os.path.join(args.model_save_path, "unet.pth")
     model = ModelWrapper(model_save_path, device="cpu")
-    model.pred_show_multiple_img(img_dir)
+    model.pred_show_single_img(img_dir)
