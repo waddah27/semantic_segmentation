@@ -43,6 +43,7 @@ if __name__ == "__main__":
         running_loss = 0.0
 
         for images, labels, masks in train_loader:
+            images, labels, masks = images.to(device), labels.to(device), masks.to(device)
             optimizer.zero_grad()
 
             cls_outputs, seg_outputs = model(images)
