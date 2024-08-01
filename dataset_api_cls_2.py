@@ -5,11 +5,15 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
 class ObjectDataset(Dataset):
-    def __init__(self, root, transform=None):
+    def __init__(self, root):
         self.root = root
         self.image_dir = os.path.join(root, 'images')
         self.mask_dir = os.path.join(root, 'masks')
-        self.transform = transform
+        self.transform = transforms.Compose([
+            transforms.Resize((128, 128)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
         self.image_files = [f for f in os.listdir(self.image_dir) if f.endswith('.jpg')]
         self.mask_files = [f for f in os.listdir(self.mask_dir) if f.endswith('.png')]
 
@@ -29,8 +33,7 @@ class ObjectDataset(Dataset):
         mask = np.array(mask)
         label = 1 if np.any(mask) else 0
 
-        if self.transform:
-            image = self.transform(image)
+        image = self.transform(image)
 
         return image, label
 
