@@ -57,7 +57,7 @@ if __name__ == "__main__":
                 cls_loss = cls_criterion(y_pred, cls)
                 loss = seg_loss + cls_loss
                 val_loss += loss.item()
-
+        val_loss = val_loss / i+1
         print(f"Epoch: {epoch+1}, val_loss: {val_loss:.4f}")
 
     torch.save(model.state_dict(), os.path.join(args.model_save_path, "unet_with_classifier.pt"))
