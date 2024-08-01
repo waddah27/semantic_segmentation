@@ -5,12 +5,13 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
 class ObjectDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, transform=None):
-        self.image_dir = image_dir
-        self.mask_dir = mask_dir
+    def __init__(self, root, transform=None):
+        self.root = root
+        self.image_dir = os.path.join(root, 'images')
+        self.mask_dir = os.path.join(root, 'masks')
         self.transform = transform
-        self.image_files = [f for f in os.listdir(image_dir) if f.endswith('.jpg')]
-        self.mask_files = [f for f in os.listdir(mask_dir) if f.endswith('.png')]
+        self.image_files = [f for f in os.listdir(self.image_dir) if f.endswith('.jpg')]
+        self.mask_files = [f for f in os.listdir(self.mask_dir) if f.endswith('.png')]
 
         assert len(self.image_files) == len(self.mask_files), "Mismatch between images and masks"
 
