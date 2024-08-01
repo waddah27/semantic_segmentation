@@ -13,6 +13,7 @@ if __name__ == "__main__":
     epochs = 2
     batch_size = 4
     learning_rate = 0.001
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_save_path", default="model_weights", type=str)
     parser.add_argument("--data_path", default="D:\Job\Other\pytorch\pytorch_pipelines\semantic_segmentation\dataset", type=str)
@@ -24,12 +25,12 @@ if __name__ == "__main__":
     train_data, val_data = random_split(ClassificationDataset(args.data_path), [0.8, 0.2], generator=generator)
     train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
     val_loader = DataLoader(val_data, batch_size=32, shuffle=True)
-    model = UnetWithClassifier(3, 1)
+    model = UnetWithClassifier(3, 1).to(device)
     seg_criterion = nn.BCEWithLogitsLoss()
     cls_criterion = nn.CrossEntropyLoss()
     optmizer = optim.Adam(model.parameters(), lr=learning_rate)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = model.to(device)
+
+    # model = model.to(device)
     for epoch in tqdm(range(epochs)):
         model.train()
         training_loss = 0
