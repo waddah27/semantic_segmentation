@@ -35,15 +35,16 @@ if __name__ == "__main__":
         training_loss = 0
         for i, (img, mask, cls) in enumerate(tqdm(train_loader)):
             img, mask, cls = img.to(device), mask.to(device), cls.to(device)
-            optmizer.zero_grad()
             mask_pred, cls_pred = model(img)
+
+            optmizer.zero_grad()
             seg_loss = seg_criterion(mask_pred, mask)
             cls_loss = cls_criterion(cls_pred, cls)
             loss = seg_loss + cls_loss
             loss.backward()
             optmizer.step()
             training_loss += loss.item()
-
+        training_loss = training_loss / i+1
         print(f"Epoch: {epoch+1}, train_loss: {training_loss:.4f}")
 
         model.eval()
