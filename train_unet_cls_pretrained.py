@@ -36,7 +36,7 @@ if __name__ == "__main__":
         model.train()
         running_loss = 0.0
 
-        for images, labels in train_loader:
+        for images, labels, masks in train_loader:
             optimizer.zero_grad()
 
             cls_outputs, seg_outputs = model(images)
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
             # Compute losses
             cls_loss = criterion_cls(cls_outputs, labels.float())
-            seg_loss = nn.BCEWithLogitsLoss()(seg_outputs, images)  # Adjust as needed for mask loss
+            seg_loss = nn.BCEWithLogitsLoss()(seg_outputs, masks)  # Adjust as needed for mask loss
 
             loss = cls_loss + seg_loss
 
