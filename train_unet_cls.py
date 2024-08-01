@@ -3,11 +3,9 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from unet import UNet
-from classifier import Classifier
 from tqdm import tqdm
 from unet_with_classifier import UnetWithClassifier
-from dataset_api import ObjectDataset
+from dataset_ip_cls import ClassificationDataset
 from torch.utils.data import DataLoader, random_split
 
 
@@ -23,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", default=learning_rate, type=float)
     args = parser.parse_args()
     generator = torch.Generator().manual_seed(42)
-    train_data, val_data = random_split(ObjectDataset(args.data_path), [0.8, 0.2], generator=generator)
+    train_data, val_data = random_split(ClassificationDataset(args.data_path), [0.8, 0.2], generator=generator)
     train_loader = DataLoader(train_data, batch_size=32, shuffle=True, num_workers=4)
     val_loader = DataLoader(val_data, batch_size=32, shuffle=True, num_workers=4)
     model = UnetWithClassifier(3, 1)
