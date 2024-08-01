@@ -21,7 +21,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Initialize models
-    model = UNetWithClassifier()
+    model = UNetWithClassifier().to(device)
+    for name, param in model.named_parameters():
+    if 'classifier' in name:
+        param.requires_grad = True
+    else:
+        param.requires_grad = False
+
     generator = torch.Generator().manual_seed(42)
     train_data , test_data = random_split(ObjectDataset(args.data_path), [0.8, 0.2], generator=generator)
     train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
