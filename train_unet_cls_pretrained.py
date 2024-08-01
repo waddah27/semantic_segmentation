@@ -24,14 +24,14 @@ if __name__ == "__main__":
     model = UNetWithClassifier()
     generator = torch.Generator().manual_seed(42)
     train_data , test_data = random_split(ObjectDataset(args.data_path), [0.8, 0.2], generator=generator)
-    train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
-    test_loader = DataLoader(test_data, batch_size=32, shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
+    test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
     # Loss and optimizer
     criterion_cls = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
     # Training loop
-    num_epochs = 10
+    num_epochs = args.epochs
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
