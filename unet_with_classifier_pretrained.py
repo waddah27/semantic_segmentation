@@ -28,3 +28,8 @@ class UNetWithClassifier(nn.Module):
         cls_output = self.classifier(flat_output)
 
         return cls_output, seg_output
+
+
+if __name__ == "__main__":
+    model = UNetWithClassifier()
+    print(model)
