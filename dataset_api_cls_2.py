@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import torch 
+import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
@@ -18,7 +18,7 @@ class ObjectDataset(Dataset):
         self.transform_mask = transforms.Compose([
             transforms.Resize((128, 128)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485], std=[0.229])
+            # transforms.Normalize(mean=[0.485], std=[0.229])
         ])
         self.image_files = [f for f in os.listdir(self.image_dir) if f.endswith('.jpg')]
         self.mask_files = [f for f in os.listdir(self.mask_dir) if f.endswith('.png')]
@@ -37,7 +37,7 @@ class ObjectDataset(Dataset):
 
         # Convert mask to binary
         mask_arr = np.array(mask)
-        label = 1 if np.any(mask_arr) else 0
+        label = torch.sigmoid(torch.tensor(255)) if np.any(mask_arr) else torch.sigmoid(torch.tensor(0))  # Sigmoid activation for binary mask
 
         image = self.transform_image(image)
         mask = self.transform_mask(mask)
