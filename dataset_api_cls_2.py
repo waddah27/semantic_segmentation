@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import torch 
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
@@ -40,6 +41,7 @@ class ObjectDataset(Dataset):
 
         image = self.transform_image(image)
         mask = self.transform_mask(mask)
+        mask = torch.sigmoid(mask) # Sigmoid activation for binary mask
 
         return image, label, mask
 
