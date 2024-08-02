@@ -27,8 +27,10 @@ class UNetWithClassifier(nn.Module):
         # Flatten the segmentation output
         flat_output = seg_output.view(seg_output.size(0), -1)
         cls_output = self.classifier(flat_output)
-        cls_output = torch.softmax(cls_output, dim=1)
-        cls_output = torch.argmax(cls_output, dim=1)
+        cls_output = torch.sigmoid(cls_output)
+
+        # Reshape the classification output
+        cls_output = cls_output.view(cls_output.size(0), 1, 1, 1)
 
         return cls_output, seg_output
 
