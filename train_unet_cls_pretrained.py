@@ -18,10 +18,12 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", default=epochs, type=int)
     parser.add_argument("--batch_size", default=batch_size, type=int)
     parser.add_argument("--learning_rate", default=learning_rate, type=float)
+    parser.add_argument("--encoder_name", default="vgg16", type=str)
     args = parser.parse_args()
 
     # Initialize models
-    model = UNetWithClassifier().to(device)
+    encoder_name = args.encoder_name
+    model = UNetWithClassifier(encoder_name=encoder_name).to(device)
     for name, param in model.named_parameters():
         if 'classifier' in name:
             param.requires_grad = True

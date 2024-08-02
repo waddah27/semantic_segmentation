@@ -3,11 +3,11 @@ import torch.nn as nn
 import segmentation_models_pytorch as smp
 
 class UNetWithClassifier(nn.Module):
-    def __init__(self):
+    def __init__(self, encoder_name="vgg16"):
         super(UNetWithClassifier, self).__init__()
         # Load a pre-trained U-Net model
         self.unet = smp.Unet(
-            encoder_name="resnet34",        # Choose encoder architecture
+            encoder_name=encoder_name,        # Choose encoder architecture
             encoder_weights="imagenet",     # Load pre-trained weights for the encoder
             classes=1,                      # Output channels (1 for binary segmentation)
             activation=None                # No activation here, we'll use it later
