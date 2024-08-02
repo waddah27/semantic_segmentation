@@ -5,7 +5,7 @@ import torch.nn as nn
 from unet_with_classifier_pretrained import UNetWithClassifier
 from dataset_api_cls_2 import ObjectDataset
 from torch.utils.data import DataLoader, random_split
-
+from tqdm import tqdm
 
 if __name__ == "__main__":
     epochs = 2
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         model.train()
         running_loss = 0.0
 
-        for images, labels, masks in train_loader:
+        for images, labels, masks in tqdm(train_loader):
             images, labels, masks = images.to(device), labels.to(device), masks.to(device)
             optimizer.zero_grad()
 
@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
             # Compute losses
             cls_loss = criterion_cls(cls_outputs, labels.float())
-            seg_loss = nn.BCEWithLogitsLoss()(seg_outputs, masks)  # Adjust as needed for mask loss
+            seg_loss = nn.BCEWithLogitsLoss()(seg_outputs, masks)
 
             loss = cls_loss + seg_loss
 

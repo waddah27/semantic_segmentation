@@ -15,6 +15,7 @@ class UNetWithClassifier(nn.Module):
         # Classification head
         self.classifier = nn.Sequential(
             nn.Linear(128 * 128, 512),  # Assuming the output size from the U-Net is 128x128
+            nn.Dropout(0.2, inplace=True),
             nn.ReLU(),
             nn.Linear(512, 1)  # Binary classification
         )
@@ -26,6 +27,8 @@ class UNetWithClassifier(nn.Module):
         # Flatten the segmentation output
         flat_output = seg_output.view(seg_output.size(0), -1)
         cls_output = self.classifier(flat_output)
+        cls_output = torch.softmax(cls_output, dim=1)
+        cls_output = torch.argmax(cls_output, dim=1)
 
         return cls_output, seg_output
 
