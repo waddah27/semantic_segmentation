@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 from unet_with_classifier import UnetWithClassifier
-from dataset_ip_cls import ClassificationDataset
+from dataset_api_cls import ClassificationDataset
 from torch.utils.data import DataLoader, random_split
 
 
