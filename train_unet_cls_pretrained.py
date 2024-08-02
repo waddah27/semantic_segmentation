@@ -55,7 +55,7 @@ if __name__ == "__main__":
             cls_loss = criterion_cls(cls_outputs, labels.float())
             seg_loss = nn.BCEWithLogitsLoss()(seg_outputs, masks)
 
-            loss = seg_loss #+ cls_loss
+            loss = seg_loss + cls_loss
 
             # Backward pass and optimization
             loss.backward()
