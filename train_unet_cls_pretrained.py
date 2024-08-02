@@ -42,7 +42,9 @@ if __name__ == "__main__":
     num_epochs = args.epochs
     for epoch in range(num_epochs):
         model.train()
-        running_loss = 0.0
+        running_loss_total = 0.0
+        running_loss_cls = 0.0
+        running_loss_seg = 0.0
 
         for images, labels, masks in tqdm(train_loader):
             images, labels, masks = images.to(device), labels.to(device), masks.to(device)
@@ -60,8 +62,14 @@ if __name__ == "__main__":
             # Backward pass and optimization
             loss.backward()
             optimizer.step()
+            running_loss_cls += cls_loss.item() * images.size(0)
+            running_loss_seg += seg_loss.item() * images.size(0)
+            running_loss_total += loss.item() * images.size(0)
 
-            running_loss += loss.item() * images.size(0)
+        epoch_total_loss = running_loss_total / len(train_loader.dataset)
+        epoch_loss_cls = running_loss_cls / len(train_loader.dataset)
+        epoch_loss_seg = running_loss_seg / len(train_loader.dataset)
+        print(f"Epoch {epoch+1}/{num_epochs}, Loss_cls: {epoch_loss_cls:.4f}")
+        print(f"Epoch {epoch+1}/{num_epochs}, Loss_seg: {epoch_loss_seg:.4f}")
+        print(f"Epoch {epoch+1}/{num_epochs}, Loss_total: {epoch_total_loss:.4f}")
 
-        epoch_loss = running_loss / len(train_loader.dataset)
-        print(f"Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}")
