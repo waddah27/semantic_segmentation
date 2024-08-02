@@ -15,7 +15,6 @@ class UNetWithClassifier(nn.Module):
         # Classification head
         self.classifier = nn.Sequential(
             nn.Linear(128 * 128, 512),  # Assuming the output size from the U-Net is 128x128
-            nn.Linear(128 * 128, 512),  # Assuming the output size from the U-Net is 128x128
             nn.Dropout(0.2, inplace=True),
             nn.ReLU(),
             nn.Linear(512, 1)  # Binary classification
