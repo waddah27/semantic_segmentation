@@ -6,7 +6,7 @@ class UNetWithClassifier(nn.Module):
     def __init__(self, encoder_name="vgg16"):
         super(UNetWithClassifier, self).__init__()
         # Load a pre-trained U-Net model
-        self.unet = smp.Unet(
+        self.unet = smp.DeepLabV3(
             encoder_name=encoder_name,        # Choose encoder architecture
             encoder_weights="imagenet",     # Load pre-trained weights for the encoder
             classes=1,                      # Output channels (1 for binary segmentation)
