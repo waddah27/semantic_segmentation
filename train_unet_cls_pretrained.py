@@ -2,6 +2,7 @@ import argparse
 import torch
 import torch.optim as optim
 import torch.nn as nn
+from trainer import ModelWrapper
 from unet_with_classifier_pretrained import UNetWithClassifier
 from dataset_api_cls_2 import ObjectDataset
 from torch.utils.data import DataLoader, random_split
@@ -40,36 +41,38 @@ if __name__ == "__main__":
 
     # Training loop
     num_epochs = args.epochs
-    for epoch in range(num_epochs):
-        model.train()
-        running_loss_total = 0.0
-        running_loss_cls = 0.0
-        running_loss_seg = 0.0
+    model_trainer = ModelWrapper(optimizer, criterion_cls, train_loader, test_loader, num_epochs, device)
+    model_trainer.train(model, model_save_path=args.model_save_path)
+    # for epoch in range(num_epochs):
+    #     model.train()
+    #     running_loss_total = 0.0
+    #     running_loss_cls = 0.0
+    #     running_loss_seg = 0.0
 
-        for images, labels, masks in tqdm(train_loader):
-            images, labels, masks = images.to(device), labels.to(device), masks.to(device)
-            optimizer.zero_grad()
+    #     for images, labels, masks in tqdm(train_loader):
+    #         images, labels, masks = images.to(device), labels.to(device), masks.to(device)
+    #         optimizer.zero_grad()
 
-            cls_outputs, seg_outputs = model(images)
-            cls_outputs = cls_outputs.squeeze()
+    #         cls_outputs, seg_outputs = model(images)
+    #         cls_outputs = cls_outputs.squeeze()
 
-            # Compute losses
-            cls_loss = criterion_cls(cls_outputs, labels.float())
-            seg_loss = nn.BCEWithLogitsLoss()(seg_outputs, masks)
+    #         # Compute losses
+    #         cls_loss = criterion_cls(cls_outputs, labels.float())
+    #         seg_loss = nn.BCEWithLogitsLoss()(seg_outputs, masks)
 
-            loss = seg_loss + cls_loss
+    #         loss = seg_loss + cls_loss
 
-            # Backward pass and optimization
-            loss.backward()
-            optimizer.step()
-            running_loss_cls += cls_loss.item() * images.size(0)
-            running_loss_seg += seg_loss.item() * images.size(0)
-            running_loss_total += loss.item() * images.size(0)
+    #         # Backward pass and optimization
+    #         loss.backward()
+    #         optimizer.step()
+    #         running_loss_cls += cls_loss.item() * images.size(0)
+    #         running_loss_seg += seg_loss.item() * images.size(0)
+    #         running_loss_total += loss.item() * images.size(0)
 
-        epoch_total_loss = running_loss_total / len(train_loader.dataset)
-        epoch_loss_cls = running_loss_cls / len(train_loader.dataset)
-        epoch_loss_seg = running_loss_seg / len(train_loader.dataset)
-        print(f"Epoch {epoch+1}/{num_epochs}, Loss_cls: {epoch_loss_cls:.4f}")
-        print(f"Epoch {epoch+1}/{num_epochs}, Loss_seg: {epoch_loss_seg:.4f}")
-        print(f"Epoch {epoch+1}/{num_epochs}, Loss_total: {epoch_total_loss:.4f}")
+    #     epoch_total_loss = running_loss_total / len(train_loader.dataset)
+    #     epoch_loss_cls = running_loss_cls / len(train_loader.dataset)
+    #     epoch_loss_seg = running_loss_seg / len(train_loader.dataset)
+    #     print(f"Epoch {epoch+1}/{num_epochs}, Loss_cls: {epoch_loss_cls:.4f}")
+    #     print(f"Epoch {epoch+1}/{num_epochs}, Loss_seg: {epoch_loss_seg:.4f}")
+    #     print(f"Epoch {epoch+1}/{num_epochs}, Loss_total: {epoch_total_loss:.4f}")
 

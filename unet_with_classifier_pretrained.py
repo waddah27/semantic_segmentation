@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
 import segmentation_models_pytorch as smp
-
+# from torchvision.models.segmentation import DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1
 class UNetWithClassifier(nn.Module):
     def __init__(self, encoder_name="vgg16"):
         super(UNetWithClassifier, self).__init__()
         # Load a pre-trained U-Net model
-        self.unet = smp.DeepLabV3(
+        self.unet = smp.Unet(
             encoder_name=encoder_name,        # Choose encoder architecture
             encoder_weights="imagenet",     # Load pre-trained weights for the encoder
             classes=1,                      # Output channels (1 for binary segmentation)
@@ -37,4 +37,5 @@ class UNetWithClassifier(nn.Module):
 
 if __name__ == "__main__":
     model = UNetWithClassifier()
+
     print(model)
