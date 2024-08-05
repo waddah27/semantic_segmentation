@@ -8,6 +8,8 @@ class ModelWrapper:
         self.val_loader = val_loader
         self.epochs = epochs
         self.device = device
+
+    
     def train(self, model, model_save_path=None):
         for epoch in range(self.epochs):
             model.train()
@@ -17,7 +19,6 @@ class ModelWrapper:
 
             for images, labels, masks in tqdm(self.train_loader):
                 images, labels, masks = images.to(self.device), labels.to(self.device), masks.to(self.device)
-                self.optimizer.zero_grad()
 
                 cls_outputs, seg_outputs = model(images)
                 cls_outputs = cls_outputs.squeeze()
@@ -25,15 +26,15 @@ class ModelWrapper:
                 # Compute losses
                 cls_loss = self.loss_fn(cls_outputs, labels.float())
                 seg_loss = self.loss_fn(seg_outputs, masks)
-
                 loss = seg_loss + cls_loss
-
-                # Backward pass and optimization
-                loss.backward()
-                self.optimizer.step()
                 running_loss_cls += cls_loss.item() * images.size(0)
                 running_loss_seg += seg_loss.item() * images.size(0)
                 running_loss_total += loss.item() * images.size(0)
+                # Backward pass and optimization
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+
 
             epoch_total_loss = running_loss_total / len(self.train_loader.dataset)
             epoch_loss_cls = running_loss_cls / len(self.train_loader.dataset)
@@ -46,17 +47,18 @@ class ModelWrapper:
             model.eval()
             val_seg_loss = 0
             val_cls_loss = 0
-            val_loss = 0
+            val_total_loss = 0
             with torch.no_grad():
                 for i, (images, labels, masks) in enumerate(self.val_loader):
                     images, labels, masks = images.to(self.device), labels.to(self.device), masks.to(self.device)
                     cls_outputs, seg_outputs = model(images)
+                    cls_outputs = cls_outputs.squeeze()
                     seg_loss = self.loss_fn(seg_outputs, masks)
                     cls_loss = self.loss_fn(cls_outputs, labels.float())
                     loss = seg_loss + cls_loss
-                    val_seg_loss += seg_loss.item()
-                    val_cls_loss += cls_loss.item()
-                    val_loss += loss.item()
-            print(f"Epoch: {epoch+1}, Val seg Loss: {val_seg_loss/i+1}")
-            print(f"Epoch: {epoch+1}, Val cls Loss: {val_cls_loss/i+1}")
-            print(f"Epoch: {epoch+1}, Val total Loss: {val_loss/i+1}")
+                    val_seg_loss += seg_loss.item() * images.size(0)
+                    val_cls_loss += cls_loss.item() * images.size(0)
+                    val_total_loss += loss.item() * images.size(0)
+            print(f"Epoch: {epoch+1}, Val seg Loss: {val_seg_loss/len(self.val_loader.dataset)}")
+            print(f"Epoch: {epoch+1}, Val cls Loss: {val_cls_loss/len(self.val_loader.dataset)}")
+            print(f"Epoch: {epoch+1}, Val total Loss: {val_total_loss/len(self.val_loader.dataset)}")
