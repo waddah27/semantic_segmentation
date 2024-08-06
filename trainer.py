@@ -1,15 +1,16 @@
 import torch
 from tqdm import tqdm
 class ModelWrapper:
-    def __init__(self, optimizer, criterion, train_loader, val_loader, epochs, device):
+    def __init__(self, optimizer, scheduler, criterion, train_loader, val_loader, epochs, device):
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.loss_fn = criterion
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.epochs = epochs
         self.device = device
 
-    
+
     def train(self, model, model_save_path=None):
         for epoch in range(self.epochs):
             model.train()
@@ -36,6 +37,7 @@ class ModelWrapper:
                 self.optimizer.step()
 
 
+            self.scheduler.step()
             epoch_total_loss = running_loss_total / len(self.train_loader.dataset)
             epoch_loss_cls = running_loss_cls / len(self.train_loader.dataset)
             epoch_loss_seg = running_loss_seg / len(self.train_loader.dataset)
