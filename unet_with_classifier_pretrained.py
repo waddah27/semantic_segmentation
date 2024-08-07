@@ -2,14 +2,14 @@ import torch
 import torch.nn as nn
 import segmentation_models_pytorch as smp
 
-from unet_upgraded import UNet2
+from unet2 import UNet2
 # from torchvision.models.segmentation import DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1
 class UNetWithClassifier(nn.Module):
-    def __init__(self, use_unet2=True, encoder_name="vgg16"):
+    def __init__(self, use_unet2=True, encoder_name="vgg16", activation=nn.LeakyReLU()):
         super(UNetWithClassifier, self).__init__()
         # Load a pre-trained U-Net model
         if use_unet2:
-            self.unet = UNet2(in_ch=3, out_ch=1)
+            self.unet = UNet2(in_ch=3, out_ch=1, activation=activation)
 
         else:
             self.unet = smp.Unet(
