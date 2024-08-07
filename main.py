@@ -38,7 +38,7 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
     test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
     # Loss and optimizer
-    criterion_cls = smp.losses.DiceLoss(smp.losses.BINARY_MODE, from_logits=True) #nn.BCEWithLogitsLoss()
+    criterion_cls = smp.losses.SoftBCEWithLogitsLoss() #nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
 
