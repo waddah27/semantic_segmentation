@@ -4,8 +4,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from trainer import ModelWrapper
-from unet_with_classifier_pretrained import UNetWithClassifier
-from dataset_api_cls_2 import ObjectDataset
+from unet_with_classifier import UNetWithClassifier
+from dataset import ObjectDataset
 from torch.utils.data import DataLoader, random_split
 
 
