@@ -13,7 +13,7 @@ class ObjectDataset(Dataset):
         self.transform_image = transforms.Compose([
             transforms.Resize((128, 128)),
             transforms.ToTensor(),
-            # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
         self.transform_mask = transforms.Compose([
             transforms.Resize((128, 128)),
@@ -34,9 +34,6 @@ class ObjectDataset(Dataset):
 
         image = Image.open(img_path).convert('RGB')
         mask = Image.open(mask_path).convert('L')
-        # Reshape: (H, W, C) -> (C, H, W)
-        # image = image.transpose((2, 0, 1))
-        # mask = mask.transpose((2, 0, 1))
 
         # Convert mask to binary
         mask_arr = np.array(mask)
