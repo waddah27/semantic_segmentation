@@ -26,11 +26,11 @@ class ModelWrapper:
 
                 # Compute losses
                 cls_loss = self.loss_fn(cls_outputs, labels.float())
-                seg_loss = self.loss_fn(seg_outputs, masks)
-                loss = seg_loss + cls_loss
+                # seg_loss = self.loss_fn(seg_outputs, masks)
+                loss = cls_loss #seg_loss + cls_loss
                 running_loss_cls += cls_loss.item() * images.size(0)
-                running_loss_seg += seg_loss.item() * images.size(0)
-                running_loss_total += loss.item() * images.size(0)
+                # running_loss_seg += seg_loss.item() * images.size(0)
+                # running_loss_total += loss.item() * images.size(0)
                 # Backward pass and optimization
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -38,12 +38,12 @@ class ModelWrapper:
 
 
             self.scheduler.step()
-            epoch_total_loss = running_loss_total / len(self.train_loader.dataset)
+            # epoch_total_loss = running_loss_total / len(self.train_loader.dataset)
             epoch_loss_cls = running_loss_cls / len(self.train_loader.dataset)
-            epoch_loss_seg = running_loss_seg / len(self.train_loader.dataset)
+            # epoch_loss_seg = running_loss_seg / len(self.train_loader.dataset)
             print(f"Epoch {epoch+1}/{self.epochs}, Train cls Loss: {epoch_loss_cls:.4f}")
-            print(f"Epoch {epoch+1}/{self.epochs}, Train seg Loss: {epoch_loss_seg:.4f}")
-            print(f"Epoch {epoch+1}/{self.epochs}, Train total Loss: {epoch_total_loss:.4f}")
+            # print(f"Epoch {epoch+1}/{self.epochs}, Train seg Loss: {epoch_loss_seg:.4f}")
+            # print(f"Epoch {epoch+1}/{self.epochs}, Train total Loss: {epoch_total_loss:.4f}")
 
 
             model.eval()
@@ -55,12 +55,12 @@ class ModelWrapper:
                     images, labels, masks = images.to(self.device), labels.to(self.device), masks.to(self.device)
                     cls_outputs, seg_outputs = model(images)
                     cls_outputs = cls_outputs.squeeze()
-                    seg_loss = self.loss_fn(seg_outputs, masks)
+                    # seg_loss = self.loss_fn(seg_outputs, masks)
                     cls_loss = self.loss_fn(cls_outputs, labels.float())
-                    loss = seg_loss + cls_loss
-                    val_seg_loss += seg_loss.item() * images.size(0)
+                    loss = cls_loss #seg_loss + cls_loss
+                    # val_seg_loss += seg_loss.item() * images.size(0)
                     val_cls_loss += cls_loss.item() * images.size(0)
-                    val_total_loss += loss.item() * images.size(0)
-            print(f"Epoch: {epoch+1}, Val seg Loss: {val_seg_loss/len(self.val_loader.dataset)}")
+                    # val_total_loss += loss.item() * images.size(0)
+            # print(f"Epoch: {epoch+1}, Val seg Loss: {val_seg_loss/len(self.val_loader.dataset)}")
             print(f"Epoch: {epoch+1}, Val cls Loss: {val_cls_loss/len(self.val_loader.dataset)}")
-            print(f"Epoch: {epoch+1}, Val total Loss: {val_total_loss/len(self.val_loader.dataset)}")
+            # print(f"Epoch: {epoch+1}, Val total Loss: {val_total_loss/len(self.val_loader.dataset)}")

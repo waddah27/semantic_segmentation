@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import segmentation_models_pytorch as smp
 from trainer import ModelWrapper
-from unet_with_classifier import UNetWithClassifier
+from unet_with_classifier import UNetWithClassifier, SegmentationWithClassifier
 from dataset import ObjectDataset
 from torch.utils.data import DataLoader, random_split
 
@@ -26,7 +26,8 @@ if __name__ == "__main__":
 
     # Initialize models
     encoder_name = args.encoder_name
-    model = UNetWithClassifier(encoder_name=encoder_name).to(device)
+    # model = UNetWithClassifier(encoder_name=encoder_name).to(device)
+    model = SegmentationWithClassifier().to(device)
     # for name, param in model.named_parameters():
     #     if 'classifier' in name:
     #         param.requires_grad = True

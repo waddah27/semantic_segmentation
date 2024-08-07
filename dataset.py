@@ -20,8 +20,8 @@ class ObjectDataset(Dataset):
             transforms.ToTensor(),
             # transforms.Normalize(mean=[0.485], std=[0.229])
         ])
-        self.image_files = [f for f in os.listdir(self.image_dir) if f.endswith('.jpg')]
-        self.mask_files = [f for f in os.listdir(self.mask_dir) if f.endswith('.png')]
+        self.image_files = sorted([f for f in os.listdir(self.image_dir) if f.endswith('.jpg')])
+        self.mask_files = sorted([f for f in os.listdir(self.mask_dir) if f.endswith('.png')])
 
         assert len(self.image_files) == len(self.mask_files), "Mismatch between images and masks"
 
