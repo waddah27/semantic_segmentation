@@ -17,7 +17,6 @@ class UNetWithClassifier(nn.Module):
                 encoder_weights="imagenet",     # Load pre-trained weights for the encoder
                 classes=1,                      # Output channels (1 for binary segmentation)
                 activation=None,            # No activation here, we'll use it later
-                encoder_freeze=True
             )
         # Classification head
         self.classifier = nn.Sequential(
