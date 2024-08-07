@@ -33,9 +33,9 @@ if __name__ == "__main__":
     #         param.requires_grad = False
 
     generator = torch.Generator().manual_seed(42)
-    train_data , test_data = random_split(ObjectDataset(args.data_path), [0.8, 0.2], generator=generator)
+    train_data , test_data = random_split(ObjectDataset(args.data_path), [0.8, 0.2])#, generator=generator)
     train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
-    test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
+    test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
     # Loss and optimizer
     criterion_cls = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
