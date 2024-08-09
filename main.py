@@ -51,6 +51,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader, random_split
+from augmentation import get_training_augmentation
 from dataset import ObjectDataset
 from unet_with_classifier import SegmentationWithClassifier
 from trainer import ModelWrapper
