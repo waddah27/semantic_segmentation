@@ -1,13 +1,15 @@
 import albumentations as albu
+from albumentations.pytorch import ToTensorV2
 def get_training_augmentation():
+    img_shape = (128, 128)
     train_transform = [
 
         albu.HorizontalFlip(p=0.5),
 
         albu.ShiftScaleRotate(scale_limit=0.5, rotate_limit=0, shift_limit=0.1, p=1, border_mode=0),
 
-        albu.PadIfNeeded(min_height=320, min_width=320, always_apply=True, border_mode=0, value=0),
-        albu.RandomCrop(height=320, width=320, always_apply=True),
+        albu.PadIfNeeded(min_height=img_shape[0], min_width=img_shape[1], always_apply=True, border_mode=0, value=0),
+        albu.RandomCrop(height=img_shape[0], width=img_shape[1], always_apply=True),
 
         albu.GaussNoise(p=0.2),
         albu.Perspective(p=0.5),
@@ -37,7 +39,7 @@ def get_training_augmentation():
             ],
             p=0.9,
         ),
-        albu.ToTensorV2(),
+        # ToTensorV2(),
     ]
     return albu.Compose(train_transform)
 
@@ -46,7 +48,7 @@ def get_validation_augmentation():
     """Add paddings to make image shape divisible by 32"""
     test_transform = [
         albu.PadIfNeeded(384, 480),
-        albu.ToTensorV2(),
+        # ToTensorV2(),
     ]
     return albu.Compose(test_transform)
 
