@@ -28,11 +28,6 @@ if __name__ == "__main__":
     encoder_name = args.encoder_name
     # model = UNetWithClassifier(encoder_name=encoder_name).to(device)
     model = SegmentationWithClassifier().to(device)
-    # for name, param in model.named_parameters():
-    #     if 'classifier' in name:
-    #         param.requires_grad = True
-    #     else:
-    #         param.requires_grad = False
 
     generator = torch.Generator().manual_seed(42)
     train_data , test_data = random_split(ObjectDataset(args.data_path), [0.8, 0.2])#, generator=generator)
