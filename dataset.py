@@ -55,6 +55,11 @@ class ObjectDataset(Dataset):
         # mask = self.transform_mask(mask)
         # mask = torch.sigmoid(mask) # Sigmoid activation for binary mask
 
-        return torch.tensor(image), label, torch.tensor(mask)  # image, label, mask
+        # Convert to tensor
+        image = torch.tensor(image, dtype=torch.float32).permute(2, 0, 1)  # Convert to CHW format
+        mask = torch.tensor(mask, dtype=torch.float32).squeeze(0)  # Remove channel dimension
+
+
+        return image, label, mask  # image, label, mask
 
 
