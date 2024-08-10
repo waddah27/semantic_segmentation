@@ -91,6 +91,7 @@ class ObjectDataset(Dataset):
         image = cv2.imread(img_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+        mask = np.where(mask > 0, 1, 0)  # Convert to binary
 
         if self.augmentation is not None:
             sample = self.augmentation(image=image, mask=mask)
@@ -99,4 +100,4 @@ class ObjectDataset(Dataset):
         image = torch.tensor(image).permute(2, 0, 1).float() / 255.0  # Normalize and rearrange dimensions
         mask = torch.tensor(mask).unsqueeze(0).float() / 255.0  # Add channel dimension and normalize
 
-        return image, mask.squeeze(), mask.squeeze()  # Return image, label, and mask
+        return image, mask.squeeze(0), mask.squeeze(0)  # Return image, label, and mask
