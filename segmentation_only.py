@@ -7,8 +7,8 @@ from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.models.segmentation import deeplabv3_resnet101
 from PIL import Image
 from tqdm import tqdm
-from sklearn.metrics import precision_score, recall_score
-root = '/content/dataset'
+from sklearn.metrics import f1_score, precision_recall_curve, precision_score, recall_score, roc_auc_score
+root = 'dataset'
 torch.cuda.empty_cache()
 batch_size = 8  # Reduced batch size
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -70,7 +70,11 @@ history = {
     'Train_loss':[],
     'Val_loss':[],
     'acc':[],
-    'recall':[]
+    'recall':[],
+    'prec':[],
+    'f1':[],
+    'auc_roc':[],
+    'auc_pr':[] 
 }
 # Training loop
 for epoch in range(epochs):  # Number of epochs
@@ -93,45 +97,74 @@ for epoch in range(epochs):  # Number of epochs
     history['Train_loss'].append(train_loss)
     print(f'Train Loss: {train_loss}')
 
+
     # Evaluation
     model.eval()  # Set model to evaluation mode
-    all_preds = []
+    all_preds_probs = []
     all_labels = []
     val_loss = 0
+    
     with torch.no_grad():
         for images, masks in tqdm(test_loader):
             images, masks = images.to(device), masks.to(device).long()  # Convert masks to long for CrossEntropyLoss
             outputs = model(images)['out']
-            # Ensure masks are in the shape [N, H, W]
             if masks.dim() == 4:
                 masks = masks.squeeze(1)  # Remove channel dimension if it's 1
+    
             loss = criterion(outputs, masks)
             val_loss += loss.item()
-            predicted = torch.argmax(outputs, dim=1)
-            all_preds.append(predicted.cpu().numpy())
-            all_labels.append(masks.cpu().numpy())
-
-    # Compute metrics
-    val_loss = val_loss/len(test_loader)
-    all_preds = np.concatenate(all_preds)
+    
+            # Collect probabilities and labels
+            outputs = torch.nn.functional.softmax(outputs, dim=1)  # Apply softmax to get probabilities
+            all_preds_probs.append(outputs.cpu().numpy())  # Collect probabilities
+            all_labels.append(masks.cpu().numpy())  # Collect true labels
+    
+    # Convert lists to numpy arrays
+    all_preds_probs = np.concatenate(all_preds_probs)
     all_labels = np.concatenate(all_labels)
-    accuracy = np.mean(all_preds == all_labels)
-    precision = precision_score(all_labels.flatten(), all_preds.flatten(), average='weighted')
-    recall = recall_score(all_labels.flatten(), all_preds.flatten(), average='weighted')
-    history['Val_loss'].append(val_loss)
+    
+    # Flatten arrays for metrics calculations
+    flat_labels = all_labels.flatten()
+    flat_preds_probs = all_preds_probs[:, 1].flatten()  # Assuming binary classification, get probability for class 1
+    
+    # Compute metrics
+    accuracy = np.mean(np.argmax(all_preds_probs, axis=1).flatten() == flat_labels)
+    precision = precision_score(flat_labels, np.argmax(all_preds_probs, axis=1).flatten(), average='weighted')
+    recall = recall_score(flat_labels, np.argmax(all_preds_probs, axis=1).flatten(), average='weighted')
+    f1 = f1_score(flat_labels, np.argmax(all_preds_probs, axis=1).flatten(), average='weighted')
+    
+    # Compute ROC AUC and PR AUC
+    if len(set(flat_labels)) == 2:  # Check if binary classification
+        roc_auc = roc_auc_score(flat_labels, flat_preds_probs)
+        precision_vals, recall_vals, _ = precision_recall_curve(flat_labels, flat_preds_probs)
+        pr_auc = np.trapz(recall_vals, precision_vals)  # Area under Precision-Recall curve
+    else:
+        roc_auc = pr_auc = np.nan
+    
+    history['Val_loss'].append(val_loss / len(test_loader))
     history['acc'].append(accuracy)
     history['recall'].append(recall)
-    print(f'Val Loss: {val_loss}')
+    history['prec'].append(precision)
+    history['f1'].append(f1)
+    history['auc_roc'].append(roc_auc)
+    history['auc_pr'].append(pr_auc)
+    f1_max = np.max(history['f1'])
+    if f1 == f1_max:
+        torch.save(model.state_dict(), f'weights/model_F1_{np.round(f1, 4)}.pth')
+    print(f'Val Loss: {val_loss / len(test_loader)}')
     print(f'Test Accuracy: {100 * accuracy:.2f}%')
     print(f'Test Precision: {precision:.2f}')
     print(f'Test Recall: {recall:.2f}')
-
+    print(f'Test F1 Score: {f1:.2f}')
+    if not np.isnan(roc_auc):
+        print(f'Test ROC AUC: {roc_auc:.2f}')
+    if not np.isnan(pr_auc):
+        print(f'Test PR AUC: {pr_auc:.2f}')
+    
+    
 # save results history as a pd dataframe
 results_csv = pd.DataFrame(history)
 print(results_csv)
 results_csv.plot()
 results_csv.to_csv('results.csv')
 print('Training finished.')
-
-# Save the model
-torch.save(model.state_dict(), 'segmentation_model.pth')
