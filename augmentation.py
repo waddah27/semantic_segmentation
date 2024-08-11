@@ -1,5 +1,11 @@
+from torchvision import transforms
 import albumentations as albu
 from albumentations.pytorch import ToTensorV2
+
+transform = transforms.Compose([
+    transforms.Resize((256, 256)),  # Resize to match model input
+    transforms.ToTensor()
+])
 def get_training_augmentation():
     img_shape = (128, 128)
     train_transform = [
