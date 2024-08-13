@@ -2,12 +2,13 @@ import os
 import torch
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn.metrics import (f1_score, precision_recall_curve, 
                              precision_score, recall_score, roc_auc_score)
-
+from PIL import Image
 class ModelWrapper:
-    def __init__(self, optimizer, scheduler, loss_fn, train_loader, test_loader, epochs, device):
+    def __init__(self, optimizer=None, scheduler=None, loss_fn=None, train_loader=None, test_loader=None, epochs=10, device=None, transform=None):
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.loss_fn = loss_fn
@@ -15,6 +16,7 @@ class ModelWrapper:
         self.test_loader = test_loader
         self.epochs = epochs
         self.device = device
+        self.transform = transform 
         # Loss and metrics per epochs
         self.history = {
             'Train_loss':[],
@@ -120,3 +122,40 @@ class ModelWrapper:
         results_csv.plot()
         results_csv.to_csv('results.csv')
         print('Training finished.')
+    
+    def load_image(self, image_path):
+        image = Image.open(image_path).convert('RGB')
+        image = self.transform(image)
+        return image.unsqueeze(0)
+
+    def infer(self, model, image_path):
+        image = self.load_image(image_path).to(self.device)
+        with torch.no_grad():
+            output = model(image)['out']
+            output = torch.argmax(output, dim=1).cpu().numpy().squeeze()
+        return output
+
+    def visualize_results(self, image_path, prediction, mask_path):
+        original_image = Image.open(image_path).convert('RGB')
+        original_mask = Image.open(mask_path)
+        original_image = original_image.resize((256, 256))
+        original_mask = original_mask.resize((256,256))
+
+        plt.figure(figsize=(10, 5))
+        plt.subplot(1, 3, 1)
+        plt.title('Original Image')
+        plt.imshow(original_image)
+        plt.axis('off')
+
+        plt.subplot(1, 3, 2)
+        plt.title('Prediction')
+        plt.imshow(prediction, cmap='gray')
+        plt.axis('off')
+        
+        plt.subplot(1, 3, 3)
+        plt.title('original mask')
+        plt.imshow(original_mask, cmap='gray')
+        plt.axis('off')
+
+        plt.show()
+
