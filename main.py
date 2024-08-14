@@ -21,7 +21,7 @@ def main():
     batch_size = 8  # Reduced batch size
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     epochs = 10
-    learning_rate = 1e-4
+    learning_rate = 1e-5
     data_path = 'dataset'
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_save_path", default="weights", type=str)
@@ -54,7 +54,7 @@ def main():
 
     # Define optimizer and loss function
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    loss_fn = torch.nn.CrossEntropyLoss()
+    loss_fn = torch.nn.BCEWithLogitsLoss()
     model_wrapper = ModelWrapper(
         optimizer=optimizer,
         scheduler=None,
