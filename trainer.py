@@ -31,93 +31,99 @@ class ModelWrapper:
             'auc_pr':[] 
         }
     def train(self, model, model_save_path=None, k_folds=5):
+        # Prepare data for cross-validation
+        all_images = []
+        all_masks = []
+        for images, masks in self.train_loader:
+            all_images.append(images)
+            all_masks.append(masks)
+        all_images = torch.cat(all_images, dim=0)
+        all_masks = torch.cat(all_masks, dim=0)
         
-        # Training loop
-        for epoch in range(self.epochs):  # Number of epochs
-            print(f'Epoch {epoch+1}')
-            model.train()
-            running_loss = 0.0
-            for images, masks in tqdm(self.train_loader):
-                images, masks = images.to(self.device), masks.to(self.device).float()  # Convert masks to float for BCEWithLogitsLoss
-                self.optimizer.zero_grad()
-                torch.cuda.empty_cache()  # Clear CUDA cache
-                outputs = model(images)['out']
-                # Ensure masks are in the shape [N, H, W]
-                # if masks.dim() == 4:
-                #     masks = masks.squeeze(1)  # Remove channel dimension if it's 1
-                loss = self.loss_fn(outputs, masks)
-                loss.backward()
-                self.optimizer.step()
-                running_loss += loss.item()
-            train_loss = running_loss / len(self.train_loader)
-            self.history['Train_loss'].append(train_loss)
-            print(f'Train Loss: {train_loss}')
+        kf = KFold(n_splits=k_folds, shuffle=True, random_state=42)
 
+        fold_results = []
+
+        for fold, (train_idx, val_idx) in enumerate(kf.split(all_images)):
+            print(f'\nFold {fold + 1}/{k_folds}')
+            
+            # Create data loaders for this fold
+            train_images, val_images = all_images[train_idx], all_images[val_idx]
+            train_masks, val_masks = all_masks[train_idx], all_masks[val_idx]
+
+            train_dataset = torch.utils.data.TensorDataset(train_images, train_masks)
+            val_dataset = torch.utils.data.TensorDataset(val_images, val_masks)
+
+            train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=self.train_loader.batch_size, shuffle=True)
+            val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=self.test_loader.batch_size, shuffle=False)
+            
+            # Initialize model, optimizer, and loss function
+            model = model.to(self.device)
+            optimizer = self.optimizer
+            loss_fn = self.loss_fn
+            
+            # Training loop
+            for epoch in range(self.epochs):
+                print(f'Epoch {epoch+1}')
+                model.train()
+                running_loss = 0.0
+                for images, masks in tqdm(train_loader):
+                    images, masks = images.to(self.device).float(), masks.to(self.device).float()
+                    optimizer.zero_grad()
+                    torch.cuda.empty_cache()
+                    outputs = model(images)['out']
+                    loss = loss_fn(outputs, masks)
+                    loss.backward()
+                    optimizer.step()
+                    running_loss += loss.item()
+                train_loss = running_loss / len(train_loader)
+                self.history['Train_loss'].append(train_loss)
+                print(f'Train Loss: {train_loss}')
+            
             # Evaluation
-            model.eval()  # Set model to evaluation mode
+            model.eval()
             all_preds_probs = []
             all_labels = []
             val_loss = 0
-            
+
             with torch.no_grad():
-                
-                for images, masks in tqdm(self.test_loader):
-                    images, masks = images.to(self.device), masks.to(self.device).float()  # Convert masks to float for BCEWithLogitsLoss
+                for images, masks in tqdm(val_loader):
+                    images, masks = images.to(self.device).float(), masks.to(self.device).float()
                     outputs = model(images)['out']
-                    # if masks.dim() == 4:
-                    #     masks = masks.squeeze(1)  # Remove channel dimension if it's 1
-                    
-                    loss = self.loss_fn(outputs, masks)
+                    loss = loss_fn(outputs, masks)
                     val_loss += loss.item()
-                    
-                    # Apply sigmoid to get probabilities
                     outputs = torch.sigmoid(outputs)
-                    all_preds_probs.append(outputs.cpu().numpy())  # Collect probabilities
-                    all_labels.append(masks.cpu().numpy())  # Collect true labels
-            
-                # Convert lists to numpy arrays
+                    all_preds_probs.append(outputs.cpu().numpy())
+                    all_labels.append(masks.cpu().numpy())
+                
                 all_preds_probs = np.concatenate(all_preds_probs)
                 all_labels = np.concatenate(all_labels)
-                
-                # Flatten arrays for metrics calculations
                 flat_labels = all_labels.flatten().astype(int)
-                flat_preds_probs = all_preds_probs.flatten()  # Flatten probabilities
-                
-                # Compute metrics
-                # Convert probabilities to binary predictions
+                flat_preds_probs = all_preds_probs.flatten()
                 binary_preds = (flat_preds_probs > 0.5).astype(int)
                 
-                # Check types and unique values
-                print(f'flat_labels type: {type(flat_labels)}, unique values: {np.unique(flat_labels)}')
-                print(f'binary_preds type: {type(binary_preds)}, unique values: {np.unique(binary_preds)}')
-        
-                
-                # Compute metrics
-                accuracy = np.mean(binary_preds == flat_labels)  # Accuracy calculation
+                accuracy = np.mean(binary_preds == flat_labels)
                 precision = precision_score(flat_labels, binary_preds, average='weighted')
                 recall = recall_score(flat_labels, binary_preds, average='weighted')
                 f1 = f1_score(flat_labels, binary_preds, average='weighted')
                 
-                # Compute ROC AUC and PR AUC
-                if len(set(flat_labels)) == 2:  # Check if binary classification
+                if len(set(flat_labels)) == 2:
                     roc_auc = roc_auc_score(flat_labels, flat_preds_probs)
                     precision_vals, recall_vals, _ = precision_recall_curve(flat_labels, flat_preds_probs)
-                    pr_auc = np.trapz(recall_vals, precision_vals)  # Area under Precision-Recall curve
+                    pr_auc = np.trapz(recall_vals, precision_vals)
                 else:
                     roc_auc = pr_auc = np.nan
-                    
-                self.history['Val_loss'].append(val_loss / len(self.test_loader))
-                self.history['acc'].append(accuracy)
-                self.history['recall'].append(recall)
-                self.history['prec'].append(precision)
-                self.history['f1'].append(f1)
-                self.history['auc_roc'].append(roc_auc)
-                self.history['auc_pr'].append(pr_auc)
-                # f1_max = np.max(self.history['f1'])
-                # if f1 == f1_max:
-                save_path = os.path.join(model_save_path, f'model_weights_new.pth')
-                torch.save(model.state_dict(), save_path)
-                print(f'Val Loss: {val_loss / len(self.test_loader)}')
+                
+                fold_results.append({
+                    'Val_loss': val_loss / len(val_loader),
+                    'Accuracy': accuracy,
+                    'Precision': precision,
+                    'Recall': recall,
+                    'F1 Score': f1,
+                    'ROC AUC': roc_auc,
+                    'PR AUC': pr_auc
+                })
+                print(f'Val Loss: {val_loss / len(val_loader)}')
                 print(f'Test Accuracy: {100 * accuracy:.2f}%')
                 print(f'Test Precision: {precision:.2f}')
                 print(f'Test Recall: {recall:.2f}')
@@ -126,8 +132,28 @@ class ModelWrapper:
                     print(f'Test ROC AUC: {roc_auc:.2f}')
                 if not np.isnan(pr_auc):
                     print(f'Test PR AUC: {pr_auc:.2f}')
+
+            # Save model weights for this fold
+            if model_save_path:
+                save_path = os.path.join(model_save_path, f'model_fold_{fold + 1}.pth')
+                torch.save(model.state_dict(), save_path)
+                print(f'Model saved to {save_path}')
+        # Aggregate results
+        fold_results_df = pd.DataFrame(fold_results)
+        mean_results = fold_results_df.mean()
+        print(f'\nCross-Validation Results:\n{fold_results_df}')
+        print(f'\nMean Results:\n{mean_results}')
+        fold_results_df.to_csv('cross-validation.csv')
+
+        # Save results history as a pd dataframe
+        # Ensure all history lists have the same length
+        max_len = max(len(v) for v in self.history.values())
+        for key in self.history.keys():
+            while len(self.history[key]) < max_len:
+                self.history[key].append(np.nan)
         
-        # save results history as a pd dataframe
+
+        # Save results history as a pd dataframe
         results_csv = pd.DataFrame(self.history)
         print(results_csv)
         results_csv.plot()

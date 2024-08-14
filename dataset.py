@@ -6,6 +6,8 @@ from PIL import Image
 from torch.utils.data import Dataset
 from augmentation import get_training_augmentation, get_validation_augmentation
 
+
+
 class ObjectDataset(Dataset):
     def __init__(self, root, augmentation=None):
         self.root = root
@@ -55,3 +57,23 @@ class CustomSegmentationDataset(Dataset):
             image = self.transform(image)
             mask = self.transform(mask)
         return image, mask
+
+
+class AugmentedSegmentationDataset(Dataset):
+    def __init__(self, image_paths, mask_paths, transform=None):
+        self.image_paths = image_paths
+        self.mask_paths = mask_paths
+        self.transform = transform
+
+    def __getitem__(self, idx):
+        image = np.array(Image.open(self.image_paths[idx]).convert('RGB').resize((256, 256)))
+        mask = np.array(Image.open(self.mask_paths[idx]).resize((256, 256)))
+        if self.transform:
+            augmented = self.transform(image=image, mask=mask)
+            image = augmented['image']
+            mask = augmented['mask']
+
+        return image, mask
+
+    def __len__(self):
+        return len(self.image_paths)

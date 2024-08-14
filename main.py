@@ -9,18 +9,20 @@ from torchvision.models.segmentation import deeplabv3_resnet101
 from PIL import Image
 from tqdm import tqdm
 from sklearn.metrics import f1_score, precision_recall_curve, precision_score, recall_score, roc_auc_score
-from augmentation import transform
+from augmentation import get_training_augmentation, get_validation_augmentation, transform, transform_A
 from trainer import ModelWrapper
 from unet_model import Unet
-from dataset import CustomSegmentationDataset
+from dataset import CustomSegmentationDataset, AugmentedSegmentationDataset
 
 
 
 def main():
+    
     torch.cuda.empty_cache()
     batch_size = 8  # Reduced batch size
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     epochs = 10
+    k_folds = 5
     learning_rate = 1e-5
     data_path = 'dataset'
     parser = argparse.ArgumentParser()
@@ -30,6 +32,7 @@ def main():
     parser.add_argument("--batch_size", default=batch_size, type=int)
     parser.add_argument("--learning_rate", default=learning_rate, type=float)
     parser.add_argument("--device", default=device, action='store_true')
+    parser.add_argument("--k_folds", default=k_folds, type=int)
     args = parser.parse_args()
 
     # Paths to images and masks
@@ -38,7 +41,7 @@ def main():
 
     image_paths = [os.path.join(image_dir, img) for img in os.listdir(image_dir) if img.endswith('.jpg')]
     mask_paths = [os.path.join(mask_dir, msk) for msk in os.listdir(mask_dir) if msk.endswith('.png')]
-
+    
     # Shuffle and split dataset
     dataset = CustomSegmentationDataset(image_paths, mask_paths, transform=transform)
     train_size = int(0.8 * len(dataset))
@@ -65,7 +68,7 @@ def main():
         device=args.device
     )
 
-    model_wrapper.train(model=model, model_save_path=args.model_save_path)
+    model_wrapper.train(model=model, model_save_path=args.model_save_path, k_folds=args.k_folds)
 
 if __name__=='__main__':
     main()
