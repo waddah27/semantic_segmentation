@@ -19,6 +19,16 @@ transform = transforms.Compose([
     transforms.Resize((256, 256)),  # Resize to match model input
     transforms.ToTensor()
 ])
+
+transform2 = transforms.Compose([
+    
+    transforms.Resize((256, 256)),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomVerticalFlip(),
+    transforms.RandomRotation(degrees=30),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+    transforms.ToTensor()
+])
 def get_training_augmentation():
     img_shape = (256, 256)
     train_transform = [

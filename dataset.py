@@ -5,7 +5,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 from augmentation import get_training_augmentation, get_validation_augmentation
-
+from torchvision import transforms
 
 
 class ObjectDataset(Dataset):
@@ -46,16 +46,22 @@ class CustomSegmentationDataset(Dataset):
         self.image_paths = image_paths
         self.mask_paths = mask_paths
         self.transform = transform
+        # Define a transform to convert masks to binary
+        self.binary_mask_transform = transforms.Compose([
+            transforms.Resize((256, 256)),
+            transforms.ToTensor(),  # Convert mask to tensor
+            transforms.Lambda(lambda x: (x > 0).float())  # Convert to binary (0 or 1)
+        ])
 
     def __len__(self):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
         image = Image.open(self.image_paths[idx]).convert('RGB')
-        mask = Image.open(self.mask_paths[idx])
+        mask = Image.open(self.mask_paths[idx]).convert('L')
         if self.transform:
             image = self.transform(image)
-            mask = self.transform(mask)
+        mask = self.binary_mask_transform(mask)
         return image, mask
 
 

@@ -19,6 +19,7 @@ class ModelWrapper:
         self.epochs = epochs
         self.device = device
         self.transform = transform 
+        self.scheduler = scheduler
         # Loss and metrics per epochs
         self.history = {
             'Train_loss':[],
@@ -31,6 +32,7 @@ class ModelWrapper:
             'auc_pr':[] 
         }
     def train(self, model, model_save_path=None, k_folds=5):
+        torch.cuda.empty_cache()
         # Prepare data for cross-validation
         all_images = []
         all_masks = []
@@ -71,7 +73,7 @@ class ModelWrapper:
                     images, masks = images.to(self.device).float(), masks.to(self.device).float()
                     optimizer.zero_grad()
                     torch.cuda.empty_cache()
-                    outputs = model(images)['out']
+                    outputs = model(images)#['out']
                     loss = loss_fn(outputs, masks)
                     loss.backward()
                     optimizer.step()
@@ -89,7 +91,7 @@ class ModelWrapper:
             with torch.no_grad():
                 for images, masks in tqdm(val_loader):
                     images, masks = images.to(self.device).float(), masks.to(self.device).float()
-                    outputs = model(images)['out']
+                    outputs = model(images)#['out']
                     loss = loss_fn(outputs, masks)
                     val_loss += loss.item()
                     outputs = torch.sigmoid(outputs)
@@ -132,7 +134,9 @@ class ModelWrapper:
                     print(f'Test ROC AUC: {roc_auc:.2f}')
                 if not np.isnan(pr_auc):
                     print(f'Test PR AUC: {pr_auc:.2f}')
-
+            # Step the scheduler with the validation loss
+            if self.scheduler:
+                self.scheduler.step(val_loss / len(val_loader))
             # Save model weights for this fold
             if model_save_path:
                 save_path = os.path.join(model_save_path, f'model_fold_{fold + 1}.pth')
@@ -165,19 +169,29 @@ class ModelWrapper:
         image = self.transform(image)
         return image.unsqueeze(0)
 
-    def infer(self, model, image_path):
+   
+    def infer(self, model, image_path, thresh=0.3):
+        # Load and preprocess image
+        torch.cuda.empty_cache()
         image = self.load_image(image_path).to(self.device)
+        
         with torch.no_grad():
-            output = model(image)['out']
-            preds = torch.argmax(output, dim=1).cpu().numpy().squeeze()
-        return preds
+            # Get model output
+            logits = model(image)#['out']
+            
+            ## Apply sigmoid to get probabilities
+            probabilities = torch.sigmoid(logits)
+
+            # Apply a threshold to obtain binary masks
+            threshold = thresh
+            preds = (probabilities > threshold).cpu().numpy().squeeze()
+            return preds
 
     def visualize_results(self, image_path, prediction, mask_path):
         original_image = Image.open(image_path).convert('RGB')
         original_mask = Image.open(mask_path)
         original_image = original_image.resize((256, 256))
         original_mask = original_mask.resize((256,256))
-
         plt.figure(figsize=(10, 5))
         plt.subplot(1, 3, 1)
         plt.title('Original Image')

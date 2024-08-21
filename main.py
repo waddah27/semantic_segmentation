@@ -4,12 +4,8 @@ import numpy as np
 import pandas as pd
 import torchvision.transforms as transforms
 import argparse
-from torch.utils.data import DataLoader, Dataset, random_split
-from torchvision.models.segmentation import deeplabv3_resnet101
-from PIL import Image
-from tqdm import tqdm
-from sklearn.metrics import f1_score, precision_recall_curve, precision_score, recall_score, roc_auc_score
-from augmentation import get_training_augmentation, get_validation_augmentation, transform, transform_A
+from torch.utils.data import DataLoader, random_split
+from augmentation import transform2
 from trainer import ModelWrapper
 from unet_model import Unet
 from dataset import CustomSegmentationDataset, AugmentedSegmentationDataset
@@ -19,11 +15,12 @@ from dataset import CustomSegmentationDataset, AugmentedSegmentationDataset
 def main():
     
     torch.cuda.empty_cache()
-    batch_size = 8  # Reduced batch size
+    batch_size =  6 # Reduced batch size
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     epochs = 10
     k_folds = 5
-    learning_rate = 1e-5
+    learning_rate = 1e-4
+    feature_extraction = False # Set to True if you want to train all parameters of the model 
     data_path = 'dataset'
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_save_path", default="weights", type=str)
@@ -33,6 +30,7 @@ def main():
     parser.add_argument("--learning_rate", default=learning_rate, type=float)
     parser.add_argument("--device", default=device, action='store_true')
     parser.add_argument("--k_folds", default=k_folds, type=int)
+    parser.add_argument("--feature_extraction", default=feature_extraction, action='store_true')
     args = parser.parse_args()
 
     # Paths to images and masks
@@ -43,7 +41,7 @@ def main():
     mask_paths = [os.path.join(mask_dir, msk) for msk in os.listdir(mask_dir) if msk.endswith('.png')]
     
     # Shuffle and split dataset
-    dataset = CustomSegmentationDataset(image_paths, mask_paths, transform=transform)
+    dataset = CustomSegmentationDataset(image_paths, mask_paths, transform=transform2)
     train_size = int(0.8 * len(dataset))
     test_size = len(dataset) - train_size
     train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
@@ -53,14 +51,16 @@ def main():
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False)
 
     # Load Unet pretrained model
-    model = Unet(device=args.device)
+    model = Unet(device=args.device, feature_extraction=args.feature_extraction, pretained=True)
 
     # Define optimizer and loss function
+    
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
     loss_fn = torch.nn.BCEWithLogitsLoss()
     model_wrapper = ModelWrapper(
         optimizer=optimizer,
-        scheduler=None,
+        scheduler=scheduler,
         loss_fn=loss_fn,
         train_loader=train_loader,
         test_loader=test_loader,
