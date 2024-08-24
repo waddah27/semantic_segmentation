@@ -185,7 +185,8 @@ class ModelWrapper:
             # Apply a threshold to obtain binary masks
             threshold = thresh
             preds = (probabilities > threshold).cpu().numpy().squeeze()
-            return preds
+            logits_cpu = logits.cpu().numpy().squeeze()
+            return preds, logits_cpu
 
     def visualize_results(self, image_path, prediction, mask_path):
         original_image = Image.open(image_path).convert('RGB')

@@ -3,9 +3,12 @@ import torch
 import numpy as np
 import pandas as pd
 import torchvision.transforms as transforms
+import segmentation_models_pytorch as smp
 import argparse
+
 from torch.utils.data import DataLoader, random_split
 from augmentation import transform2
+from losses import CombinedLoss
 from trainer import ModelWrapper
 from unet_model import Unet
 from dataset import CustomSegmentationDataset, AugmentedSegmentationDataset
@@ -17,10 +20,10 @@ def main():
     torch.cuda.empty_cache()
     batch_size =  6 # Reduced batch size
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    epochs = 10
+    epochs = 30
     k_folds = 5
-    learning_rate = 1e-4
-    feature_extraction = False # Set to True if you want to train all parameters of the model 
+    learning_rate = 2e-3
+    feature_extraction = True # Set to False if you want to train all parameters of the model 
     data_path = 'dataset'
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_save_path", default="weights", type=str)
@@ -51,13 +54,20 @@ def main():
     test_loader = DataLoader(test_dataset, args.batch_size, shuffle=False)
 
     # Load Unet pretrained model
-    model = Unet(device=args.device, feature_extraction=args.feature_extraction, pretained=True)
-
+    # model = Unet(device=args.device, feature_extraction=args.feature_extraction, pretained=True)
+    model = smp.Unet(
+        encoder_name="resnet101",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
+        encoder_weights="imagenet",     # use `imagenet` pretreined weights for encoder initialization
+        in_channels=3,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
+        classes=1,                      # model output channels (number of classes in your dataset)
+        activation=None
+    )
     # Define optimizer and loss function
     
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
-    loss_fn = torch.nn.BCEWithLogitsLoss()
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
+    loss_fn = CombinedLoss() #torch.nn.BCEWithLogitsLoss()
     model_wrapper = ModelWrapper(
         optimizer=optimizer,
         scheduler=scheduler,
