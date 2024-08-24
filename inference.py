@@ -16,6 +16,7 @@ model = smp.Unet(
     encoder_weights="imagenet",     # use `imagenet` pretreined weights for encoder initialization
     in_channels=3,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
     classes=1,                      # model output channels (number of classes in your dataset)
+    activation=None
 ).to(device)
 model.load_state_dict(torch.load('weights/model_fold_1.pth'))
 model.eval()
